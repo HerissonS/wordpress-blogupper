@@ -1,8 +1,8 @@
 #!/bin/bash
 # Garantir permissões corretas para o diretório WordPress
 echo "Ajustando permissões..."
-chown -R www-data:www-data /var/www/html/wordpress
-chmod -R 755 /var/www/html/wordpress
+chown -R www-data:www-data /var/www/html
+chmod -R 755 /var/www/html
 
 # Instalar dependências PHP se necessário
 echo "Instalando dependências adicionais..."

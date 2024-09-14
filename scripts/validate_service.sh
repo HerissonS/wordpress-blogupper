@@ -8,8 +8,8 @@ else
     exit 1
 fi
 
-# Verificar se o WordPress está acessível (pode ser alterado para o URL real)
-curl -I http://localhost/wordpress | grep "200 OK" > /dev/null
+# Verificar se o WordPress está acessível (ajustado para o diretório raiz)
+curl -I http://localhost/ | grep "200 OK" > /dev/null
 if [ $? -ne 0 ]; then
     echo "Erro: O WordPress não está acessível."
     exit 1

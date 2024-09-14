@@ -1,0 +1,38 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - echo "Instalando dependências do sistema"
+      - apt-get update
+      - apt-get install -y apache2 php libapache2-mod-php php-mysql zip git awscli
+  pre_build:
+    commands:
+      - echo "Iniciando fase de pré-build"
+      - echo "Clonando repositório privado do WordPress"
+      - git clone https://$GITHUB_TOKEN@github.com/HerissonS/wordpress-blogupper.git /var/www/html/wordpress
+      - if [ ! -d "/var/www/html/wordpress/.git" ]; then echo "Falha ao clonar o repositório"; exit 1; fi
+      - echo "Configurando permissões"
+      - chown -R www-data:www-data /var/www/html/wordpress
+      - chmod -R 755 /var/www/html/wordpress
+      - echo "Movendo arquivos do repositório para o diretório correto"
+      - mv /var/www/html/wordpress/* /var/www/html/
+      - rm -rf /var/www/html/wordpress
+  build:
+    commands:
+      - echo "Compactando o WordPress para criar o artefato"
+      - cd /var/www/html
+      # Renomear o arquivo antigo no S3 se existir
+      - if aws s3 ls s3://codebuild-wordpress-blogupper/wordpress-artifact.zip; then aws s3 mv s3://codebuild-wordpress-blogupper/wordpress-artifact.zip s3://codebuild-wordpress-blogupper/wordpress-artifact.old.zip; fi
+      # Criar o novo arquivo compactado
+      - zip -r wordpress-artifact.zip .
+  post_build:
+    commands:
+      - echo "Build finalizado. Preparando para enviar artefato ao S3"
+      - aws s3 cp /var/www/html/wordpress-artifact.zip s3://codebuild-wordpress-blogupper/ --region us-east-1
+
+artifacts:
+  files:
+    - wordpress-artifact.zip
+  discard-paths: yes
+  base-directory: /var/www/html
