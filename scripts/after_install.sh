@@ -1,5 +1,5 @@
 #!/bin/bash
-# Teste 2 Garantir permissões corretas para o diretório WordPress
+# Garantir permissões corretas para o diretório WordPress
 echo "Ajustando permissões..."
 chown -R www-data:www-data /var/www/html/wordpress
 chmod -R 755 /var/www/html/wordpress
