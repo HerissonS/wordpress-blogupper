@@ -3,15 +3,13 @@ os: linux
 files:
   - source: /
     destination: /var/www/html
+
 hooks:
   BeforeInstall:
-    - location: scripts/cleanup.sh
+    - location: scripts/unzip_artifact.sh
       timeout: 300
       runas: root
   AfterInstall:
-    - location: scripts/unpack.sh
-      timeout: 300
-      runas: root
-    - location: scripts/set_permissions.sh
+    - location: scripts/mount_filesystem.sh
       timeout: 300
       runas: root
