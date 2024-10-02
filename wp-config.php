@@ -20,16 +20,16 @@
 
 // ** Database settings - You can get this info from your web host ** //
 /** The name of the database for WordPress */
-define( 'DB_NAME', 'wordpress' );
+define( 'DB_NAME', 'nome_db' );
 
 /** Database username */
-define( 'DB_USER', 'wordpress' );
+define( 'DB_USER', 'usuario_db' );
 
 /** Database password */
-define( 'DB_PASSWORD', 'wordpress' );
+define( 'DB_PASSWORD', 'senha_db' );
 
 /** Database hostname */
-define( 'DB_HOST', 'wordpress.c54uas4a0d00.us-east-1.rds.amazonaws.com' );
+define( 'DB_HOST', 'Endececo_do_DB' );
 
 /** Database charset to use in creating database tables. */
 define( 'DB_CHARSET', 'utf8mb4' );
@@ -83,8 +83,6 @@ define( 'WP_DEBUG', false );
 
 /* Add any custom values between this line and the "stop editing" line. */
 
-#define('WP_HOME', 'http://44.213.124.64');
-#define('WP_SITEURL', 'http://44.213.124.64');
 
 if ( isset( $_SERVER['HTTPS'] ) && $_SERVER['HTTPS'] === 'on' ) {
     $protocol = 'https://';
