@@ -48,14 +48,14 @@ define( 'DB_COLLATE', '' );
  *
  * @since 2.6.0
  */
-define( 'AUTH_KEY',         'BW)QB-4g^v(x4FPQy6KULy=y9<#CYp411uqv.u)v[o*!X/;x3QJ1Bn/<,oh&I*E&' );
-define( 'SECURE_AUTH_KEY',  '^Yxb#`Y@Wqp=+VU[V/6)dH0!t28!,D<[_+n2k_GFSDkR]CvTmyI{.~yrg 06XoKV' );
-define( 'LOGGED_IN_KEY',    'TLVHQGfR_J]8>L1^ Q!;BW~[ce2nDo2v3!Ua;rr!fr*57FYV@[#4g]AbhtBMV^Ol' );
-define( 'NONCE_KEY',        't ,uCoE@grmg&z4}h7/ LrFC%`8#*;fE/-76]c:0weLOH*/c}:(6y%:HbY.+qw 3' );
-define( 'AUTH_SALT',        ':$syov&z7==Bur/IlJI9_H%b0w(RYO NvBqN+bHZwVIL52KA3:^]ix)Q,meNnQj;' );
-define( 'SECURE_AUTH_SALT', '+4v0nQ dH0BzLS54<WnaicD)>k1Ysk%`ZA[|N=MoqG72bZ6DGz=%hxSQru:KB|=P' );
-define( 'LOGGED_IN_SALT',   '@P[o%v2P*=_%?5|s4w^1iy(F:,qPXI1ZqBt1+z!lLl#.[,z&Lc(&Y>x}zOuI]N3I' );
-define( 'NONCE_SALT',       '$:f!3Lw|`%c$@PEa1Qp+ 2@Fcvf)jnF$q{X4?98cQSGt&7)K8*}Cj:!2/pwA/E E' );
+define( 'AUTH_KEY',         getenv('WP_AUTH_KEY')         ?: 'put-your-unique-phrase-here' );
+define( 'SECURE_AUTH_KEY',  getenv('WP_SECURE_AUTH_KEY')  ?: 'put-your-unique-phrase-here' );
+define( 'LOGGED_IN_KEY',    getenv('WP_LOGGED_IN_KEY')    ?: 'put-your-unique-phrase-here' );
+define( 'NONCE_KEY',        getenv('WP_NONCE_KEY')        ?: 'put-your-unique-phrase-here' );
+define( 'AUTH_SALT',        getenv('WP_AUTH_SALT')        ?: 'put-your-unique-phrase-here' );
+define( 'SECURE_AUTH_SALT', getenv('WP_SECURE_AUTH_SALT') ?: 'put-your-unique-phrase-here' );
+define( 'LOGGED_IN_SALT',   getenv('WP_LOGGED_IN_SALT')   ?: 'put-your-unique-phrase-here' );
+define( 'NONCE_SALT',       getenv('WP_NONCE_SALT')       ?: 'put-your-unique-phrase-here' );
 
 /**#@-*/
 

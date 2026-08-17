@@ -1,0 +1,209 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Stack de CI/CD e Auto Scaling para o WordPress BlogUpper na AWS (CodePipeline, CodeBuild, CodeDeploy, S3, AutoScaling)"
+
+Parameters:
+  SubnetId1:
+    Type: "AWS::EC2::Subnet::Id"
+    Description: "ID da Subnet privada para implantação do Auto Scaling Group"
+    Default: "subnet-0d4ccb6475dd64553"
+  SecurityGroupId:
+    Type: "AWS::EC2::SecurityGroup::Id"
+    Description: "ID do Security Group das instâncias EC2 do WordPress"
+    Default: "sg-0d4ed7e8c1483c745"
+  AmiId:
+    Type: "AWS::EC2::Image::Id"
+    Description: "ID da AMI para as instâncias EC2"
+    Default: "ami-010064af26a4a87b7"
+  InstanceType:
+    Type: "String"
+    Description: "Tipo de instância EC2"
+    Default: "t2.micro"
+
+Resources:
+  # IAM Role para o CodeBuild
+  CodeBuildRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service: "codebuild.amazonaws.com"
+            Action: "sts:AssumeRole"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/AWSCodeBuildDeveloperAccess"
+        - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+        - "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
+        - "arn:aws:iam::aws:policy/IAMReadOnlyAccess"
+
+  # CodeBuild Project
+  CodeBuildProject:
+    Type: "AWS::CodeBuild::Project"
+    Properties:
+      Name: "WordPressBuildProject"
+      Source:
+        Type: "GITHUB"
+        Location: "https://github.com/HerissonS/wordpress-blogupper"
+        Auth:
+          Type: "OAUTH"
+          Resource: "{{resolve:secretsmanager:GitHubToken:SecretString:token}}"
+      Artifacts:
+        Type: "S3"
+        Location: !Ref PipelineS3Bucket
+        Packaging: "ZIP"
+        Name: "wordpress-artifact.zip"
+      Environment:
+        ComputeType: "BUILD_GENERAL1_SMALL"
+        Image: "aws/codebuild/amazonlinux2-x86_64-standard:3.0"
+        Type: "LINUX_CONTAINER"
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+      TimeoutInMinutes: 60
+
+  # IAM Role para o CodeDeploy
+  CodeDeployRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service: "codedeploy.amazonaws.com"
+            Action: "sts:AssumeRole"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/AWSCodeDeployFullAccess"
+        - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+        - "arn:aws:iam::aws:policy/AmazonEC2ReadOnlyAccess"
+
+  # CodeDeploy Application
+  CodeDeployApplication:
+    Type: "AWS::CodeDeploy::Application"
+    Properties:
+      ApplicationName: "WordPressApp"
+      ComputePlatform: "Server"
+
+  # CodeDeploy Deployment Group
+  CodeDeployDeploymentGroup:
+    Type: "AWS::CodeDeploy::DeploymentGroup"
+    Properties:
+      ApplicationName: !Ref CodeDeployApplication
+      DeploymentGroupName: "WordPressDeploymentGroup"
+      ServiceRoleArn: !GetAtt CodeDeployRole.Arn
+      DeploymentConfigName: "CodeDeployDefault.AllAtOnce"
+      AutoScalingGroups:
+        - !Ref AutoScalingGroup
+      Ec2TagFilters:
+        - Key: "Name"
+          Value: "wordpress-blogupper"
+          Type: "KEY_AND_VALUE"
+
+  # IAM Role para o CodePipeline
+  CodePipelineRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service: "codepipeline.amazonaws.com"
+            Action: "sts:AssumeRole"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/AWSCodePipeline_FullAccess"
+        - "arn:aws:iam::aws:policy/AWSCodeBuildDeveloperAccess"
+        - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+        - "arn:aws:iam::aws:policy/AWSCodeDeployFullAccess"
+
+  # Pipeline S3 Bucket
+  PipelineS3Bucket:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName: "wordpress-codepipeline-bucket"
+
+  # CodePipeline
+  CodePipeline:
+    Type: "AWS::CodePipeline::Pipeline"
+    Properties:
+      RoleArn: !GetAtt CodePipelineRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref PipelineS3Bucket
+      Stages:
+        - Name: "Source"
+          Actions:
+            - Name: "SourceAction"
+              ActionTypeId:
+                Category: "Source"
+                Owner: "ThirdParty"
+                Provider: "GitHub"
+                Version: "1"
+              OutputArtifacts:
+                - Name: "SourceOutput"
+              Configuration:
+                Owner: "HerissonS"
+                Repo: "wordpress-blogupper"
+                Branch: "main"
+                OAuthToken: "{{resolve:secretsmanager:GitHubToken:SecretString:token}}"
+              RunOrder: 1
+
+        - Name: "Build"
+          Actions:
+            - Name: "BuildAction"
+              ActionTypeId:
+                Category: "Build"
+                Owner: "AWS"
+                Provider: "CodeBuild"
+                Version: "1"
+              InputArtifacts:
+                - Name: "SourceOutput"
+              OutputArtifacts:
+                - Name: "BuildOutput"
+              Configuration:
+                ProjectName: !Ref CodeBuildProject
+              RunOrder: 1
+
+        - Name: "Deploy"
+          Actions:
+            - Name: "DeployAction"
+              ActionTypeId:
+                Category: "Deploy"
+                Owner: "AWS"
+                Provider: "CodeDeploy"
+                Version: "1"
+              InputArtifacts:
+                - Name: "BuildOutput"
+              Configuration:
+                ApplicationName: !Ref CodeDeployApplication
+                DeploymentGroupName: !Ref CodeDeployDeploymentGroup
+              RunOrder: 1
+
+  # Auto Scaling Group
+  AutoScalingGroup:
+    Type: "AWS::AutoScaling::AutoScalingGroup"
+    Properties:
+      AutoScalingGroupName: "wordpress-blogupper-new"
+      MinSize: "1"
+      MaxSize: "3"
+      DesiredCapacity: "1"
+      LaunchConfigurationName: !Ref LaunchConfiguration
+      VPCZoneIdentifier:
+        - !Ref SubnetId1
+      Tags:
+        - Key: "Name"
+          Value: "wordpress-blogupper-new"
+          PropagateAtLaunch: true
+
+  # Launch Configuration
+  LaunchConfiguration:
+    Type: "AWS::AutoScaling::LaunchConfiguration"
+    Properties:
+      ImageId: !Ref AmiId
+      InstanceType: !Ref InstanceType
+      SecurityGroups:
+        - !Ref SecurityGroupId
+
+Outputs:
+  PipelineName:
+    Description: "Name of the CodePipeline"
+    Value: !Ref CodePipeline

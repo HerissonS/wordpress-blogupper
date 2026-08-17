@@ -1,0 +1,24 @@
+# WordPress Logs & Temp files
+*.log
+*.tmp
+*.zip
+*.tar.gz
+*.swp
+.DS_Store
+Thumbs.db
+
+# Environment & Secret files
+.env
+.env.*
+
+# Local IDEs
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Deployment & Backup artifacts
+/wordpress-artifact.zip
+/wordpress-artifact.old.zip
